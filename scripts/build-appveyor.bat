@@ -30,7 +30,11 @@ SET PATH=C:\Program Files\7-Zip;%PATH%
 
 ::update submodule variant
 git submodule update --init deps/mapbox/variant
+IF %ERRORLEVEL% EQU 0 GOTO SUBMODULE_OK
+git -C deps/mapbox/variant config --add remote.origin.fetch "+refs/pull/*:refs/pull/origin/*"
+git submodule update --init deps/mapbox/variant
 IF %ERRORLEVEL% NEQ 0 GOTO ERROR
+:SUBMODULE_OK
 
 ::cloning mapnik-gyp
 if EXIST mapnik-gyp ECHO mapnik-gyp already cloned && GOTO MAPNIK_GYP_ALREADY_HERE

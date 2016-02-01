@@ -8,4 +8,4 @@
 	branch = master
 [submodule "deps/mapbox/variant"]
 	path = deps/mapbox/variant
-	url = https://github.com/mapbox/variant.git
+	url = https://github.com/lightmare/variant.git
