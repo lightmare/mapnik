@@ -39,8 +39,8 @@ IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 :MAPNIK_GYP_ALREADY_HERE
 CD mapnik-gyp
 IF %ERRORLEVEL% NEQ 0 GOTO ERROR
-git pull
-IF %ERRORLEVEL% NEQ 0 GOTO ERROR
+::git pull
+::IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 
 
 SET DEPS_URL=https://mapbox.s3.amazonaws.com/windows-builds/windows-build-deps/mapnik-win-sdk-binary-deps-%msvs_toolset%.0-%platform%.7z
