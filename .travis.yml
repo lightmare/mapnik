@@ -61,9 +61,7 @@ before_install:
  - export BENCH=${BENCH:-false}
  - if [[ ${TRAVIS_BRANCH} != 'master' ]]; then export MASON_PUBLISH=false; fi
  - if [[ ${TRAVIS_PULL_REQUEST} != 'false' ]]; then export MASON_PUBLISH=false; fi
- - SUBMODULES='deps/mapbox/variant'
- - commit_message_contains '[skip tests]' || SUBMODULES=''
- - git_submodule_update --init --depth=10 $SUBMODULES
+ - git_submodule_update --init --depth=50 'deps/mapbox/variant'
 
 install:
  - on 'linux' export PYTHONPATH=${PYTHONUSERBASE}/lib/python2.7/site-packages
@@ -86,9 +84,9 @@ script:
  - export SCONSFLAGS='--debug=time'
  - configure BENCHMARK=${BENCH}
  - make
- - make test
- - enabled ${COVERAGE} coverage
- - enabled ${BENCH} make bench
+ - good && elapsed_minutes -lt 40 && download_test_data && make test
+ - good && elapsed_minutes -lt 45 && enabled ${COVERAGE} coverage
+ - good && elapsed_minutes -lt 45 && enabled ${BENCH} make bench
 
 after_success:
  - if enabled ${MASON_PUBLISH}; then
