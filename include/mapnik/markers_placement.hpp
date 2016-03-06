@@ -41,49 +41,43 @@ public:
                              Locator &locator,
                              Detector &detector,
                              markers_placement_params const& params)
-        : active_placement_(nullptr)
+        : placement_type_(placement_type)
     {
-        switch (placement_type)
-        {
-        default:
-        case MARKER_POINT_PLACEMENT:
-            active_placement_ = construct(&point_, locator, detector, params);
-            break;
-        case MARKER_INTERIOR_PLACEMENT:
-            active_placement_ = construct(&interior_, locator, detector, params);
-            break;
-        case MARKER_LINE_PLACEMENT:
-            active_placement_ = construct(&line_, locator, detector, params);
-            break;
-        case MARKER_VERTEX_FIRST_PLACEMENT:
-            active_placement_ = construct(&vertex_first_, locator, detector, params);
-            break;
-        case MARKER_VERTEX_LAST_PLACEMENT:
-            active_placement_ = construct(&vertex_last_, locator, detector, params);
-            break;
-        }
-        // previously placement-type constructors (markers_*_placement)
-        // rewound the locator; reasons for rewinding here instead:
-        //  1) so that nobody is tempted to call now-virtual rewind()
-        //      in placement-type class constructors
-        //  2) it servers as a runtime check that the above switch isn't
-        //      missing cases and active_placement_ points to an object
-        active_placement_->rewind();
+        dispatch(constructor(), locator, detector, params);
     }
 
     ~markers_placement_finder()
     {
-        active_placement_->~markers_basic_placement();
+        dispatch(destructor());
     }
 
     // Get next point where the marker should be placed. Returns true if a place is found, false if none is found.
     bool get_point(double &x, double &y, double &angle, bool ignore_placement)
     {
-        return active_placement_->get_point(x, y, angle, ignore_placement);
+        return dispatch(point_getter(), x, y, angle, ignore_placement);
+    }
+
+    template <typename Visitor, typename... Args>
+    typename Visitor::result_type dispatch(Visitor && visitor, Args && ...args)
+    {
+        switch (placement_type_)
+        {
+        default:
+        case MARKER_POINT_PLACEMENT:
+            return std::forward<Visitor>(visitor)(point_, std::forward<Args>(args)...);
+        case MARKER_INTERIOR_PLACEMENT:
+            return std::forward<Visitor>(visitor)(interior_, std::forward<Args>(args)...);
+        case MARKER_LINE_PLACEMENT:
+            return std::forward<Visitor>(visitor)(line_, std::forward<Args>(args)...);
+        case MARKER_VERTEX_FIRST_PLACEMENT:
+            return std::forward<Visitor>(visitor)(vertex_first_, std::forward<Args>(args)...);
+        case MARKER_VERTEX_LAST_PLACEMENT:
+            return std::forward<Visitor>(visitor)(vertex_last_, std::forward<Args>(args)...);
+        }
     }
 
 private:
-    markers_basic_placement* active_placement_;
+    marker_placement_e const placement_type_;
 
     union
     {
@@ -94,12 +88,38 @@ private:
         markers_vertex_last_placement<Locator, Detector> vertex_last_;
     };
 
-    template <typename T>
-    static T* construct(T* what, Locator & locator, Detector & detector,
-                        markers_placement_params const& params)
+    struct constructor
     {
-        return new(what) T(locator, detector, params);
-    }
+        using result_type = void;
+
+        template <typename T, typename... Args>
+        void operator() (T & that, Args && ...args)
+        {
+            new(&that) T(std::forward<Args>(args)...);
+        }
+    };
+
+    struct destructor
+    {
+        using result_type = void;
+
+        template <typename T>
+        void operator() (T & that)
+        {
+            that.~T();
+        }
+    };
+
+    struct point_getter
+    {
+        using result_type = bool;
+
+        template <typename T, typename... Args>
+        bool operator() (T & that, Args && ...args)
+        {
+            return that.get_point(std::forward<Args>(args)...);
+        }
+    };
 };
 
 }
