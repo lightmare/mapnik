@@ -10,12 +10,15 @@ todo
 - shrink icu data
 '
 
+MASON_VERSION="694d08c"
+
 function setup_mason() {
     if [[ ! -d ./.mason ]]; then
-        git clone --depth 1 https://github.com/mapbox/mason.git ./.mason
+        git clone https://github.com/mapbox/mason.git ./.mason
+        (cd ./.mason && git checkout ${MASON_VERSION})
     else
         echo "Updating to latest mason"
-        (cd ./.mason && git pull)
+        (cd ./.mason && git fetch && git checkout ${MASON_VERSION})
     fi
     export MASON_DIR=$(pwd)/.mason
     export PATH=$(pwd)/.mason:$PATH
@@ -42,6 +45,7 @@ function install() {
 ICU_VERSION="55.1"
 
 function install_mason_deps() {
+    install ccache 3.2.4 &
     install jpeg_turbo 1.4.0 libjpeg &
     install libpng 1.6.20 libpng &
     install libtiff 4.0.4beta libtiff &

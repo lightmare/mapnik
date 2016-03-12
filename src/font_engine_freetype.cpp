@@ -33,11 +33,6 @@
 #include <mapnik/warning_ignore.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
-#pragma GCC diagnostic pop
-
-// stl
-#include <algorithm>
-#include <stdexcept>
 
 // freetype2
 extern "C"
@@ -47,6 +42,11 @@ extern "C"
 #include FT_STROKER_H
 #include FT_MODULE_H
 }
+#pragma GCC diagnostic pop
+
+// stl
+#include <algorithm>
+#include <stdexcept>
 
 
 namespace mapnik
@@ -75,7 +75,7 @@ unsigned long ft_read_cb(FT_Stream stream, unsigned long offset, unsigned char *
     if (count <= 0) return 0;
     FILE * file = static_cast<FILE *>(stream->descriptor.pointer);
     std::fseek (file , offset , SEEK_SET);
-    return std::fread ((char*)buffer, 1, count, file);
+    return std::fread(reinterpret_cast<unsigned char*>(buffer), 1, count, file);
 }
 
 bool freetype_engine::register_font(std::string const& file_name)

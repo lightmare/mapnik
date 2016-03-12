@@ -1,3 +1,4 @@
+
 #include "catch.hpp"
 
 #include <iostream>
@@ -13,7 +14,15 @@
 #include <mapnik/cairo/cairo_image_util.hpp>
 #endif
 
+#pragma GCC diagnostic push
+#include <mapnik/warning_ignore.hpp>
 #include <boost/format.hpp>
+#include <boost/filesystem/convenience.hpp>
+#pragma GCC diagnostic pop
+
+inline void make_directory(std::string const& dir) {
+    boost::filesystem::create_directories(dir);
+}
 
 TEST_CASE("image io") {
 
@@ -143,12 +152,16 @@ SECTION("image_util : save_to_file/save_to_stream/save_to_string")
     supported_types.push_back(std::make_tuple("webp","webp"));
 #endif
 
+    std::string directory_name("/tmp/mapnik-tests/");
+    make_directory(directory_name);
+    REQUIRE(mapnik::util::exists(directory_name));
+
     for (auto const& info : supported_types)
     {
         std::string extension;
         std::string format;
         std::tie(extension, format) = info;
-        std::string filename = (boost::format("/tmp/mapnik-%1%.%2%") % named_color % extension).str();
+        std::string filename = (boost::format(directory_name + "mapnik-%1%.%2%") % named_color % extension).str();
         mapnik::save_to_file(im, filename);
         std::string str = mapnik::save_to_string(im, format);
         std::ostringstream ss;

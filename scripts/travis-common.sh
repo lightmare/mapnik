@@ -105,8 +105,7 @@ config_override () {
 configure () {
     if enabled ${COVERAGE}; then
         ./configure "$@" PGSQL2SQLITE=False SVG2PNG=False SVG_RENDERER=False \
-            CUSTOM_LDFLAGS='--coverage' CUSTOM_CXXFLAGS='--coverage' \
-            CUSTOM_CFLAGS='--coverage' DEBUG=True
+            COVERAGE=True DEBUG=True WARNING_CXXFLAGS="-Wno-unknown-warning-option"
     elif enabled ${MASON_PUBLISH}; then
         export MASON_NAME=mapnik
         export MASON_VERSION=latest
@@ -114,9 +113,9 @@ configure () {
         source ./.mason/mason.sh
         ./configure "$@" PREFIX=${MASON_PREFIX} \
             PATH_REPLACE='' MAPNIK_BUNDLED_SHARE_DIRECTORY=True \
-            RUNTIME_LINK='static'
+            RUNTIME_LINK='static' WARNING_CXXFLAGS="-Wno-unknown-warning-option"
     else
-        ./configure "$@"
+        ./configure "$@" WARNING_CXXFLAGS="-Wno-unknown-warning-option"
     fi
     # print final config values, sorted and indented
     sort -sk1,1 ./config.py | sed -e 's/^/	/'
@@ -124,10 +123,12 @@ configure () {
 
 coverage () {
     ./mason_packages/.link/bin/cpp-coveralls \
-        --build-root . --gcov-options '\-lp' --exclude mason_packages \
+        --gcov /usr/bin/llvm-cov-${LLVM_VERSION} \
+        --build-root . --gcov-options '\-lp' \
+        --exclude mason_packages \
         --exclude .sconf_temp --exclude benchmark --exclude deps \
         --exclude scons --exclude test --exclude demo --exclude docs \
-        --exclude fonts --exclude utils \
+        --exclude fonts \
         > /dev/null
 }
 

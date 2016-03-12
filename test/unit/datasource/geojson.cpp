@@ -62,25 +62,6 @@ std::pair<mapnik::datasource_ptr,mapnik::feature_ptr> fetch_first_feature(std::s
     return std::make_pair(ds,feature);
 }
 
-int create_disk_index(std::string const& filename, bool silent = true)
-{
-    std::string cmd;
-    if (std::getenv("DYLD_LIBRARY_PATH") != nullptr)
-    {
-        cmd += std::string("DYLD_LIBRARY_PATH=") + std::getenv("DYLD_LIBRARY_PATH") + " ";
-    }
-    cmd += "mapnik-index " + filename;
-    if (silent)
-    {
-#ifndef _WINDOWS
-        cmd += " 2>/dev/null";
-#else
-        cmd += " 2> nul";
-#endif
-    }
-    return std::system(cmd.c_str());
-}
-
 }
 
 TEST_CASE("geojson") {
@@ -663,20 +644,8 @@ TEST_CASE("geojson") {
                     auto ds = mapnik::datasource_cache::instance().create(params);
                     REQUIRE(bool(ds));
                     auto fields = ds->get_descriptor().get_descriptors();
-                    // TODO: this combo (cache_features==false and create_index==false)
-                    // exposes the case where not all field names are reported, which should
-                    // ideally be fixed, but how?
-                    if (cache_features == false && create_index == false) 
-                    {
-                        std::initializer_list<std::string> names = {"one"};
-                        REQUIRE_FIELD_NAMES(fields, names);
-                    } 
-                    else
-                    {
-                        std::initializer_list<std::string> names = {"one", "two"};
-                        REQUIRE_FIELD_NAMES(fields, names);
-                    }
-
+                    std::initializer_list<std::string> names = {"one", "two"};
+                    REQUIRE_FIELD_NAMES(fields, names);
                 }
                 // cleanup
                 if (create_index && mapnik::util::exists(filename + ".index"))
