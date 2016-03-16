@@ -43,32 +43,47 @@ function install() {
 }
 
 ICU_VERSION="55.1"
+MAX_INSTALL_JOBS=4
+
+function num_running_jobs() {
+    jobs -pr | grep -cx '[1-9][0-9]*'
+}
 
 function install_mason_deps() {
-    install ccache 3.2.4 &
-    install jpeg_turbo 1.4.0 libjpeg &
-    install libpng 1.6.20 libpng &
-    install libtiff 4.0.4beta libtiff &
-    install libpq 9.4.1 &
-    install sqlite 3.8.8.3 libsqlite3 &
-    install expat 2.1.0 libexpat &
+    while read pkg_name pkg_ver la_name rest; do
+        # skip blank lines
+        [[ -z $pkg_name ]] && continue
+        # skip comment lines
+        [[ $pkg_name == '#'* ]] && continue
+        # limit number of concurrent jobs
+        while [[ $(num_running_jobs) -ge $MAX_INSTALL_JOBS ]]; do
+            wait -n
+        done
+        install $pkg_name $pkg_ver $la_name &
+    done
     wait
-    install icu ${ICU_VERSION} &
-    install proj 4.8.0 libproj &
-    install pixman 0.32.6 libpixman-1 &
-    install cairo 1.14.2 libcairo &
-    install protobuf 2.6.1 &
-    # technically protobuf is not a mapnik core dep, but installing
-    # here by default helps make mapnik-vector-tile builds easier
-    wait
-    install webp 0.4.2 libwebp &
-    install gdal 1.11.2 libgdal &
-    install boost 1.59.0 &
-    install boost_liball 1.59.0 &
-    install freetype 2.6 libfreetype &
-    install harfbuzz 0.9.41 libharfbuzz &
-    wait
-}
+} <<DEPS
+    ccache          3.2.4
+    jpeg_turbo      1.4.0       libjpeg
+    libpng          1.6.20      libpng
+    libtiff         4.0.4beta   libtiff
+    libpq           9.4.1
+    sqlite          3.8.8.3     libsqlite3
+    expat           2.1.0       libexpat
+    icu             ${ICU_VERSION}
+    proj            4.8.0       libproj
+    pixman          0.32.6      libpixman-1
+    cairo           1.14.2      libcairo
+    protobuf        2.6.1
+        # technically protobuf is not a mapnik core dep, but installing
+        # here by default helps make mapnik-vector-tile builds easier
+    webp            0.4.2       libwebp
+    gdal            1.11.2      libgdal
+    boost           1.59.0
+    boost_liball    1.59.0
+    freetype        2.6         libfreetype
+    harfbuzz        0.9.41      libharfbuzz
+DEPS
 
 MASON_LINKED_ABS=$(pwd)/mason_packages/.link
 MASON_LINKED_REL=./mason_packages/.link
