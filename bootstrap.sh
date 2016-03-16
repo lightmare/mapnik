@@ -152,4 +152,5 @@ function main() {
     echo "    ./configure && make"
 }
 
+echo $BASH_VERSION
 main
