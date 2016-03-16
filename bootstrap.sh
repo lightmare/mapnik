@@ -57,7 +57,8 @@ function install_mason_deps() {
         [[ $pkg_name == '#'* ]] && continue
         # limit number of concurrent jobs
         while [[ $(num_running_jobs) -ge $MAX_INSTALL_JOBS ]]; do
-            wait -n
+            # wait -n requires bash >= 4.3
+            wait -n 2>/dev/null || sleep 1
         done
         install $pkg_name $pkg_ver $la_name &
     done
