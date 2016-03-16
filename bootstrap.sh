@@ -129,7 +129,7 @@ function setup_runtime_settings() {
 
 function main() {
     setup_mason
-    install_mason_deps
+    time install_mason_deps
     make_config > ./config.py
     setup_runtime_settings
     echo "Ready, now run:"
