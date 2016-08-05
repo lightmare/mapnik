@@ -6,6 +6,9 @@ compiler:
  - gcc
 
 env:
+  global:
+   - CCACHE_COMPRESS=1
+   - CCACHE_TEMPDIR=/tmp/.ccache-temp
   matrix:
    - XMLPARSER="libxml2" DEBUG=False
    - XMLPARSER="libxml2" DEBUG=True
@@ -56,14 +59,22 @@ install:
  - gdal-config --ogr-enabled || true
 
 before_script:
+ - source scripts/travis-rcache.sh
  - psql -U postgres -c 'create database template_postgis'
  - psql -U postgres -c 'create extension postgis' -d template_postgis
  - if [[ "${CXX}" == 'g++' ]]; then export JOBS=2; fi;
  - if [[ "${CXX}" == 'clang++' ]]; then export JOBS=4; fi;
  - if [[ "${DEBUG}" == True ]]; then export JOBS=$((JOBS/2)); fi;
+ - rcache_download || true # failure is not fatal
+ - ccache --version
+ - ccache --show-stats
 
 script:
- - ./configure CXX=$CXX CC=$CC XMLPARSER=$XMLPARSER DEBUG=$DEBUG ENABLE_LOG=$DEBUG PGSQL2SQLITE=True SVG2PNG=True BINDINGS='python' CPP_TESTS=True CAIRO=True FAST=True
+ - ./configure CXX="ccache $CXX" CC="ccache $CC" XMLPARSER=$XMLPARSER DEBUG=$DEBUG ENABLE_LOG=$DEBUG PGSQL2SQLITE=True SVG2PNG=True BINDINGS='python' CPP_TESTS=True CAIRO=True FAST=True
  - make
  - make test-local
  - source localize.sh && make grind
+
+before_cache:
+ - ccache --show-stats --max-size 100M --cleanup
+ - rcache_upload
