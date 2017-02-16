@@ -233,7 +233,7 @@ int main (int argc,char** argv)
                             {
                                 std::clog << "record number " << record_number << " box=" << item_ext << std::endl;
                             }
-                            tree.insert(mapnik::detail::node(offset * 2, start, end),item_ext);
+                            tree.emplace(item_ext, offset * 2, start, end);
                             ++count;
                         }
                     }
@@ -250,7 +250,7 @@ int main (int argc,char** argv)
                     {
                         std::clog << "record number " << record_number << " box=" << item_ext << std::endl;
                     }
-                    tree.insert(mapnik::detail::node(offset * 2,-1,0),item_ext);
+                    tree.emplace(item_ext, offset * 2, -1, 0);
                     ++count;
                 }
             }
@@ -267,8 +267,7 @@ int main (int argc,char** argv)
             }
             else
             {
-                tree.trim();
-                std::clog << " number nodes=" << tree.count() << std::endl;
+                std::clog << " number nodes=" << tree.count_nodes() << std::endl;
                 file.exceptions(std::ios::failbit | std::ios::badbit);
                 tree.write(file);
                 file.flush();

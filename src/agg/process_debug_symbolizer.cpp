@@ -232,10 +232,11 @@ void agg_renderer<T0,T1>::process(debug_symbolizer const& sym,
     }
     else if (mode == DEBUG_SYM_MODE_COLLISION)
     {
-        for (auto const& n : *common_.detector_)
-        {
-            draw_rect(pixmap_, n.get().box);
-        }
+        common_.detector_->for_each(
+                [this](auto const& item)
+                {
+                    draw_rect(pixmap_, item.box);
+                });
     }
     else if (mode == DEBUG_SYM_MODE_VERTEX)
     {

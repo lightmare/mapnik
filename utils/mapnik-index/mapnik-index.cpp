@@ -211,8 +211,8 @@ int main (int argc, char** argv)
             mapnik::quad_tree<std::pair<std::size_t, std::size_t>> tree(extent_d, depth, ratio);
             for (auto const& item : boxes)
             {
-                auto ext_f = std::get<0>(item);
-                tree.insert(std::get<1>(item), mapnik::box2d<double>(ext_f.minx(), ext_f.miny(), ext_f.maxx(), ext_f.maxy()));
+                mapnik::box2d<double> ext_d(std::get<0>(item));
+                tree.insert(ext_d, std::get<1>(item));
             }
 
             std::fstream file((filename + ".index").c_str(),
@@ -224,8 +224,7 @@ int main (int argc, char** argv)
             }
             else
             {
-                tree.trim();
-                std::clog <<  "number nodes=" << tree.count() << std::endl;
+                std::clog <<  "number nodes=" << tree.count_nodes() << std::endl;
                 std::clog <<  "number element=" << tree.count_items() << std::endl;
                 file.exceptions(std::ios::failbit | std::ios::badbit);
                 tree.write(file);

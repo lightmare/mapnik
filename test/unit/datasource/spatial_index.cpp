@@ -36,52 +36,61 @@ TEST_CASE("spatial_index")
         mapnik::quad_tree<value_type> tree(extent);
         REQUIRE(tree.extent() == extent);
         // insert some items
-        tree.insert(1, mapnik::box2d<double>(10,10,20,20));
-        tree.insert(2, mapnik::box2d<double>(30,30,40,40));
-        tree.insert(3, mapnik::box2d<double>(30,10,40,20));
-        tree.insert(4, mapnik::box2d<double>(1,1,2,2));
-        tree.trim();
+        tree.insert({10,10,20,20}, 1);
+        tree.insert({30,30,40,40}, 2);
+        tree.insert({30,10,40,20}, 3);
+        tree.insert({1,1,2,2}, 4);
 
-        REQUIRE(tree.count() == 5);
-        REQUIRE(tree.count_items() == 4);
+        CHECK(tree.count_nodes() == 5);
+        CHECK(tree.count_items() == 4);
 
         // serialise
         std::ostringstream out(std::ios::binary);
         tree.write(out);
         out.flush();
 
-        REQUIRE(out.str().length() == 252);
-        REQUIRE(out.str().at(0) == 'm');
+        CHECK(out.str().length() == 252);
+        CHECK(out.str().at(0) == 'm');
 
         // read bounding box
         std::istringstream in(out.str(), std::ios::binary);
         auto box = mapnik::util::spatial_index<value_type, filter_in_box, std::istringstream>::bounding_box(in);
-        REQUIRE(box == tree.extent());
+        CHECK(tree.extent().contains(box));
+
         // bounding box query
         std::vector<value_type> results;
         filter_in_box filter(box);
         mapnik::util::spatial_index<value_type, filter_in_box, std::istringstream>::query(filter, in, results);
 
-        REQUIRE(results[0] == 1);
-        REQUIRE(results[1] == 4);
-        REQUIRE(results[2] == 3);
-        REQUIRE(results[3] == 2);
-        REQUIRE(results.size() == 4);
+        CHECK(results.size() == 4);
+        CHECKED_IF(results.size() >= 4)
+        {
+            CHECK(results[0] == 1);
+            CHECK(results[1] == 4);
+            CHECK(results[2] == 3);
+            CHECK(results[3] == 2);
+        }
 
         // query first N elements interface
         results.clear();
         in.seekg(0, std::ios::beg);
         mapnik::util::spatial_index<value_type, filter_in_box, std::istringstream>::query_first_n(filter, in, results, 2);
-        REQUIRE(results.size() == 2);
-        REQUIRE(results[0] == 1);
-        REQUIRE(results[1] == 4);
+        CHECK(results.size() == 2);
+        CHECKED_IF(results.size() >= 2)
+        {
+            CHECK(results[0] == 1);
+            CHECK(results[1] == 4);
+        }
         results.clear();
         in.seekg(0, std::ios::beg);
         mapnik::util::spatial_index<value_type, filter_in_box, std::istringstream>::query_first_n(filter, in, results, 5);
-        REQUIRE(results[0] == 1);
-        REQUIRE(results[1] == 4);
-        REQUIRE(results[2] == 3);
-        REQUIRE(results[3] == 2);
-        REQUIRE(results.size() == 4);
+        CHECK(results.size() == 4);
+        CHECKED_IF(results.size() >= 4)
+        {
+            CHECK(results[0] == 1);
+            CHECK(results[1] == 4);
+            CHECK(results[2] == 3);
+            CHECK(results[3] == 2);
+        }
     }
 }

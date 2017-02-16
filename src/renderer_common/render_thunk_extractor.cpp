@@ -137,17 +137,18 @@ void render_thunk_extractor::update_box() const
 {
     label_collision_detector4 & detector = *common_.detector_;
 
-    for (auto const& label : detector)
-    {
-        if (box_.width() > 0 && box_.height() > 0)
-        {
-            box_.expand_to_include(label.get().box);
-        }
-        else
-        {
-            box_ = label.get().box;
-        }
-    }
+    detector.for_each(
+            [this](auto const& item)
+            {
+                if (box_.width() > 0 && box_.height() > 0)
+                {
+                    box_.expand_to_include(item.box);
+                }
+                else
+                {
+                    box_ = item.box;
+                }
+            });
 
     detector.clear();
 }

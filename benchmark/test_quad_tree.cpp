@@ -29,7 +29,7 @@ public:
             int sx = 0.2 * uniform_dist(engine);
             int sy = 0.2 * uniform_dist(engine);
             mapnik::box2d<double> box(cx - sx,cy - sy, cx + sx, cy + sy);
-            tree.insert(i, box);
+            tree.insert(box, i);
         }
         // bounding box query
         std::size_t count=0;
@@ -40,12 +40,12 @@ public:
             int sx = 0.4 * uniform_dist(engine);
             int sy = 0.4 * uniform_dist(engine);
             mapnik::box2d<double> box(cx - sx,cy - sy, cx + sx, cy + sy);
-            auto itr = tree.query_in_box(box);
-            auto end = tree.query_end();
-            for ( ;itr != end; ++itr)
-            {
-                ++count;
-            }
+            tree.find_near(box,
+                    [&](auto const& item)
+                    {
+                        ++count;
+                        return false;
+                    });
         }
         return true;
     }

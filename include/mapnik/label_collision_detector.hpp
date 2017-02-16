@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,22 +54,16 @@ private:
     tree_t tree_;
 
 public:
-    using query_iterator = tree_t::query_iterator;
-
     explicit label_collision_detector4(box2d<double> const& _extent)
         : tree_(_extent) {}
 
     bool has_placement(box2d<double> const& box)
     {
-        tree_t::query_iterator tree_itr = tree_.query_in_box(box);
-        tree_t::query_iterator tree_end = tree_.query_end();
-
-        for ( ;tree_itr != tree_end; ++tree_itr)
-        {
-            if (tree_itr->get().box.intersects(box)) return false;
-        }
-
-        return true;
+        auto overlaps = [&](label const& item)
+            {
+                return item.box.intersects(box);
+            };
+        return tree_.find_near(box, overlaps) == false;
     }
 
     bool has_placement(box2d<double> const& box, double margin)
@@ -78,18 +72,7 @@ public:
                                                ? box2d<double>(box.minx() - margin, box.miny() - margin,
                                                                box.maxx() + margin, box.maxy() + margin)
                                                : box);
-
-        tree_t::query_iterator tree_itr = tree_.query_in_box(margin_box);
-        tree_t::query_iterator tree_end = tree_.query_end();
-
-        for (;tree_itr != tree_end; ++tree_itr)
-        {
-            if (tree_itr->get().box.intersects(margin_box))
-            {
-                return false;
-            }
-        }
-        return true;
+        return has_placement(margin_box);
     }
 
     bool has_placement(box2d<double> const& box, double margin, mapnik::value_unicode_string const& text, double repeat_distance)
@@ -107,34 +90,25 @@ public:
                                                                box.maxx() + margin, box.maxy() + margin)
                                                : box);
 
-        tree_t::query_iterator tree_itr = tree_.query_in_box(repeat_box);
-        tree_t::query_iterator tree_end = tree_.query_end();
-
-        for ( ;tree_itr != tree_end; ++tree_itr)
-        {
-            if (tree_itr->get().box.intersects(margin_box) || (text == tree_itr->get().text && tree_itr->get().box.intersects(repeat_box)))
+        auto overlaps = [&](label const& item)
             {
+                if (item.box.intersects(margin_box))
+                    return true;
+                if (item.box.intersects(repeat_box) && item.text == text)
+                    return true;
                 return false;
-            }
-        }
-
-        return true;
+            };
+        return tree_.find_near(repeat_box, overlaps) == false;
     }
 
     void insert(box2d<double> const& box)
     {
-        if (tree_.extent().intersects(box))
-        {
-            tree_.insert(label(box), box);
-        }
+        tree_.emplace(box, box);
     }
 
     void insert(box2d<double> const& box, mapnik::value_unicode_string const& text)
     {
-        if (tree_.extent().intersects(box))
-        {
-            tree_.insert(label(box, text), box);
-        }
+        tree_.emplace(box, box, text);
     }
 
     void clear()
@@ -147,9 +121,13 @@ public:
         return tree_.extent();
     }
 
-    query_iterator begin() { return tree_.query_in_box(extent()); }
-    query_iterator end() { return tree_.query_end(); }
+    template <typename Fn>
+    void for_each(Fn && func)
+    {
+        tree_.for_each(std::forward<Fn>(func));
+    }
 };
-}
+
+} // namespace mapnik
 
 #endif // MAPNIK_LABEL_COLLISION_DETECTOR_HPP
