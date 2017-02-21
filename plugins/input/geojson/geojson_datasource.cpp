@@ -182,7 +182,7 @@ geojson_datasource::geojson_datasource(parameters const& params)
 
 namespace {
 
-using box_type = box2d<double>;
+using box_type = mapnik::box2d<double>;
 using boxes_type = std::vector<std::pair<box_type, std::pair<std::size_t, std::size_t>>>;
 using base_iterator_type = char const*;
 const mapnik::transcoder geojson_datasource_static_tr("utf8");

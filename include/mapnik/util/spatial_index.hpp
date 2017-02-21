@@ -24,17 +24,13 @@
 #define MAPNIK_UTIL_SPATIAL_INDEX_HPP
 
 //mapnik
-#include <mapnik/coord.hpp>
 #include <mapnik/geometry/box2d.hpp>
-#include <mapnik/query.hpp>
-#include <mapnik/geom_util.hpp>
+
 // stl
-#include <type_traits>
 #include <cstdint>
 #include <cstring>
-
-using mapnik::box2d;
-using mapnik::query;
+#include <type_traits>
+#include <vector>
 
 namespace mapnik { namespace util {
 

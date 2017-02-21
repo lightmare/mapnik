@@ -22,6 +22,7 @@
 
 #include "catch.hpp"
 
+#include <mapnik/geom_util.hpp>
 #include <mapnik/quad_tree.hpp>
 #include <mapnik/util/spatial_index.hpp>
 
