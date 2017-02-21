@@ -75,9 +75,7 @@ csv_index_featureset::csv_index_featureset(std::string const& filename,
     std::string indexname = filename + ".index";
     std::ifstream index(indexname.c_str(), std::ios::binary);
     if (!index) throw mapnik::datasource_exception("CSV Plugin: can't open index file " + indexname);
-    mapnik::util::spatial_index<value_type,
-                                mapnik::filter_in_box,
-                                std::ifstream>::query(filter, index, positions_);
+    mapnik::util::spatial_index<value_type>::query(filter, index, positions_);
 
     std::sort(positions_.begin(), positions_.end(),
               [](value_type const& lhs, value_type const& rhs) { return lhs.first < rhs.first;});

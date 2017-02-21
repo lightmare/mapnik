@@ -55,13 +55,13 @@ TEST_CASE("spatial_index")
 
         // read bounding box
         std::istringstream in(out.str(), std::ios::binary);
-        auto box = mapnik::util::spatial_index<value_type, filter_in_box, std::istringstream>::bounding_box(in);
+        auto box = mapnik::util::spatial_index<value_type>::bounding_box(in);
         CHECK(tree.extent().contains(box));
 
         // bounding box query
         std::vector<value_type> results;
         filter_in_box filter(box);
-        mapnik::util::spatial_index<value_type, filter_in_box, std::istringstream>::query(filter, in, results);
+        mapnik::util::spatial_index<value_type>::query(filter, in, results);
 
         CHECK(results.size() == 4);
         CHECKED_IF(results.size() >= 4)
@@ -75,7 +75,7 @@ TEST_CASE("spatial_index")
         // query first N elements interface
         results.clear();
         in.seekg(0, std::ios::beg);
-        mapnik::util::spatial_index<value_type, filter_in_box, std::istringstream>::query_first_n(filter, in, results, 2);
+        mapnik::util::spatial_index<value_type>::query_first_n(filter, in, results, 2);
         CHECK(results.size() == 2);
         CHECKED_IF(results.size() >= 2)
         {
@@ -84,7 +84,7 @@ TEST_CASE("spatial_index")
         }
         results.clear();
         in.seekg(0, std::ios::beg);
-        mapnik::util::spatial_index<value_type, filter_in_box, std::istringstream>::query_first_n(filter, in, results, 5);
+        mapnik::util::spatial_index<value_type>::query_first_n(filter, in, results, 5);
         CHECK(results.size() == 4);
         CHECKED_IF(results.size() >= 4)
         {

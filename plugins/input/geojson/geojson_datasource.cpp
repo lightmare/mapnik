@@ -207,16 +207,13 @@ void geojson_datasource::initialise_disk_index(std::string const& filename)
 {
     // read extent
     using value_type = std::pair<std::size_t, std::size_t>;
+    using spatial_index = mapnik::util::spatial_index<value_type>;
     std::ifstream index(filename_ + ".index", std::ios::binary);
     if (!index) throw mapnik::datasource_exception("GeoJSON Plugin: could not open: '" + filename_ + ".index'");
-    extent_ = mapnik::util::spatial_index<value_type,
-                                          mapnik::filter_in_box,
-                                          std::ifstream>::bounding_box(index);
+    extent_ = spatial_index::bounding_box(index);
     mapnik::filter_in_box filter(extent_);
     std::vector<value_type> positions;
-    mapnik::util::spatial_index<value_type,
-                                mapnik::filter_in_box,
-                                std::ifstream>::query_first_n(filter, index, positions, num_features_to_query_);
+    spatial_index::query_first_n(filter, index, positions, num_features_to_query_);
 
     mapnik::util::file file(filename_);
     if (!file) throw mapnik::datasource_exception("GeoJSON Plugin: could not open: '" + filename_ + "'");
@@ -454,13 +451,12 @@ boost::optional<mapnik::datasource_geometry_t> geojson_datasource::get_geometry_
     if (has_disk_index_)
     {
         using value_type = std::pair<std::size_t, std::size_t>;
+        using spatial_index = mapnik::util::spatial_index<value_type>;
         std::ifstream index(filename_ + ".index", std::ios::binary);
         if (!index) throw mapnik::datasource_exception("GeoJSON Plugin: could not open: '" + filename_ + ".index'");
         mapnik::filter_in_box filter(extent_);
         std::vector<value_type> positions;
-        mapnik::util::spatial_index<value_type,
-                                    mapnik::filter_in_box,
-                                    std::ifstream>::query_first_n(filter, index, positions, num_features_to_query_);
+        spatial_index::query_first_n(filter, index, positions, num_features_to_query_);
 
         mapnik::util::file file(filename_);
 

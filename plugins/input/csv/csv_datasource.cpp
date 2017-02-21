@@ -156,9 +156,7 @@ csv_datasource::csv_datasource(parameters const& params)
             using value_type = std::pair<std::size_t, std::size_t>;
             std::ifstream index(filename_ + ".index", std::ios::binary);
             if (!index) throw mapnik::datasource_exception("CSV Plugin: could not open: '" + filename_ + ".index'");
-            extent_ = mapnik::util::spatial_index<value_type,
-                                                  mapnik::filter_in_box,
-                                                  std::ifstream>::bounding_box(index);
+            extent_ = mapnik::util::spatial_index<value_type>::bounding_box(index);
         }
         //in.close(); no need to call close, rely on dtor
     }
@@ -322,9 +320,7 @@ csv_datasource::get_geometry_type_impl(std::istream & stream) const
 
         mapnik::filter_in_box filter(extent_);
         std::vector<value_type> positions;
-        mapnik::util::spatial_index<value_type,
-                                    mapnik::filter_in_box,
-                                    std::ifstream>::query_first_n(filter, index, positions, 5);
+        mapnik::util::spatial_index<value_type>::query_first_n(filter, index, positions, 5);
         int multi_type = 0;
         for (auto const& val : positions)
         {

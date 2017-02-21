@@ -29,14 +29,13 @@
 // stl
 #include <cstdint>
 #include <cstring>
+#include <istream>
 #include <type_traits>
 #include <vector>
 
 namespace mapnik { namespace util {
 
-
-template <typename InputStream>
-bool check_spatial_index(InputStream& in)
+inline bool check_spatial_index(std::istream& in)
 {
     char header[17]; // mapnik-index
     std::memset(header, 0, 17);
@@ -45,27 +44,35 @@ bool check_spatial_index(InputStream& in)
     return (std::strncmp(header, "mapnik-index",12) == 0);
 }
 
-template <typename Value, typename Filter, typename InputStream,
-          typename BBox = mapnik::box2d<double>>
+template <typename Value, typename BBox = mapnik::box2d<double>>
 class spatial_index
 {
-    using bbox_type = BBox;
 public:
-    static void query(Filter const& filter, InputStream& in,std::vector<Value>& pos);
-    static bbox_type bounding_box( InputStream& in );
-    static void query_first_n(Filter const& filter, InputStream & in, std::vector<Value>& pos, std::size_t count);
+    static BBox bounding_box(std::istream& in);
+
+    template <typename Filter>
+    static void query(Filter const& filter, std::istream& in, std::vector<Value>& pos);
+
+    template <typename Filter>
+    static void query_first_n(Filter const& filter, std::istream& in,
+                              std::vector<Value>& pos, std::size_t count);
+
 private:
     spatial_index();
     ~spatial_index();
     spatial_index(spatial_index const&);
     spatial_index& operator=(spatial_index const&);
-    template <typename T> static T read_raw(InputStream& in);
-    static void query_node(Filter const& filter, InputStream& in, std::vector<Value> & results);
-    static void query_first_n_impl(Filter const& filter, InputStream& in, std::vector<Value> & results, std::size_t count);
+
+    template <typename Filter>
+    static void query_first_n_impl(Filter const& filter, std::istream& in,
+                                   std::vector<Value>& results, std::size_t count);
+
+    template <typename T>
+    static T read_raw(std::istream& in);
 };
 
-template <typename Value, typename Filter, typename InputStream, typename BBox>
-BBox spatial_index<Value, Filter, InputStream, BBox>::bounding_box(InputStream& in)
+template <typename Value, typename BBox>
+BBox spatial_index<Value, BBox>::bounding_box(std::istream& in)
 {
     static_assert(std::is_standard_layout<Value>::value, "Values stored in quad-tree must be standard layout type");
     if (!check_spatial_index(in)) throw std::runtime_error("Invalid index file (regenerate with shapeindex)");
@@ -73,67 +80,58 @@ BBox spatial_index<Value, Filter, InputStream, BBox>::bounding_box(InputStream& 
     return read_raw<BBox>(in);
 }
 
-template <typename Value, typename Filter, typename InputStream, typename BBox>
-void spatial_index<Value, Filter, InputStream, BBox>::query(Filter const& filter, InputStream& in, std::vector<Value>& results)
+template <typename Value, typename BBox>
+template <typename Filter>
+void spatial_index<Value, BBox>::query
+    (Filter const& filter, std::istream& in, std::vector<Value>& results)
 {
     static_assert(std::is_standard_layout<Value>::value, "Values stored in quad-tree must be standard layout type");
     if (!check_spatial_index(in)) throw std::runtime_error("Invalid index file (regenerate with shapeindex)");
-    query_node(filter, in, results);
+    query_first_n_impl(filter, in, results, std::size_t(-1));
 }
 
-template <typename Value, typename Filter, typename InputStream, typename BBox>
-void spatial_index<Value, Filter, InputStream, BBox>::query_node(Filter const& filter, InputStream& in, std::vector<Value>& results)
-{
-    auto offset = read_raw<std::uint32_t>(in);
-    auto node_ext = read_raw<BBox>(in);
-    auto num_shapes = read_raw<std::uint32_t>(in);
-    if (!filter.pass(node_ext))
-    {
-        in.seekg(offset + num_shapes * sizeof(Value) + 4, std::ios::cur);
-        return;
-    }
-
-    for (std::uint32_t i = 0; i < num_shapes; ++i)
-    {
-        Value item;
-        in.read(reinterpret_cast<char*>(&item), sizeof(Value));
-        results.push_back(std::move(item));
-    }
-
-    auto children = read_raw<std::uint32_t>(in);
-    for (std::uint32_t j = 0; j < children; ++j)
-    {
-        query_node(filter, in, results);
-    }
-}
-
-template <typename Value, typename Filter, typename InputStream, typename BBox>
-void spatial_index<Value, Filter, InputStream, BBox>::query_first_n(Filter const& filter, InputStream& in, std::vector<Value>& results, std::size_t count)
+template <typename Value, typename BBox>
+template <typename Filter>
+void spatial_index<Value, BBox>::query_first_n
+    (Filter const& filter, std::istream& in, std::vector<Value>& results, std::size_t count)
 {
     static_assert(std::is_standard_layout<Value>::value, "Values stored in quad-tree must be standard layout type");
     if (!check_spatial_index(in)) throw std::runtime_error("Invalid index file (regenerate with shapeindex)");
     query_first_n_impl(filter, in, results, count);
 }
 
-template <typename Value, typename Filter, typename InputStream, typename BBox>
-void spatial_index<Value, Filter, InputStream, BBox>::query_first_n_impl(Filter const& filter, InputStream& in, std::vector<Value>& results, std::size_t count)
+template <typename Value, typename BBox>
+template <typename Filter>
+void spatial_index<Value, BBox>::query_first_n_impl
+    (Filter const& filter, std::istream& in, std::vector<Value>& results, std::size_t count)
 {
-    if (results.size() == count) return;
+    std::size_t prev_results = results.size();
+    if (prev_results >= count)
+        return;
+
     auto offset = read_raw<std::uint32_t>(in);
     auto node_ext = read_raw<BBox>(in);
-    auto num_shapes = read_raw<std::uint32_t>(in);
+    std::size_t num_shapes = read_raw<std::uint32_t>(in);
+
     if (!filter.pass(node_ext))
     {
         in.seekg(offset + num_shapes * sizeof(Value) + 4, std::ios::cur);
         return;
     }
 
-    for (std::uint32_t i = 0; i < num_shapes; ++i)
+    if (num_shapes > count - prev_results)
     {
-        Value item;
-        in.read(reinterpret_cast<char*>(&item), sizeof(Value));
-        if (results.size() < count) results.push_back(std::move(item));
+        num_shapes = count - prev_results;
     }
+    if (num_shapes > 0)
+    {
+        results.resize(prev_results + num_shapes);
+        in.read(reinterpret_cast<char*>(results.data() + prev_results),
+                num_shapes * sizeof(Value));
+        if (results.size() >= count)
+            return;
+    }
+
     auto children = read_raw<std::uint32_t>(in);
     for (std::uint32_t j = 0; j < children; ++j)
     {
@@ -141,9 +139,9 @@ void spatial_index<Value, Filter, InputStream, BBox>::query_first_n_impl(Filter 
     }
 }
 
-template <typename Value, typename Filter, typename InputStream, typename BBox>
+template <typename Value, typename BBox>
 template <typename T>
-T spatial_index<Value, Filter, InputStream, BBox>::read_raw(InputStream& in)
+T spatial_index<Value, BBox>::read_raw(std::istream& in)
 {
     T result;
     in.read(reinterpret_cast<char*>(&result), sizeof(result));
