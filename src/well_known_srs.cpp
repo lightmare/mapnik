@@ -97,8 +97,9 @@ bool lonlat2merc(double & x, double & y)
     using namespace util;
     auto dx = clamp(x, -180.0, 180.0);
     auto dy = clamp(y, -MERC_MAX_LATITUDE, MERC_MAX_LATITUDE);
+    // https://en.wikipedia.org/wiki/Gudermannian_function
+    y = EARTH_RADIUS * std::atanh(std::sin(radians(dy)));
     x = EARTH_RADIUS * radians(dx);
-    y = EARTH_RADIUS * std::log(std::tan(radians(90 + dy) / 2));
     return true;
 }
 
@@ -125,8 +126,9 @@ bool merc2lonlat(double & x, double & y)
     using namespace util;
     auto rx = clamp(x / EARTH_RADIUS, -pi, pi);
     auto ry = clamp(y / EARTH_RADIUS, -pi, pi);
+    // https://en.wikipedia.org/wiki/Gudermannian_function
+    y = degrees(std::asin(std::tanh(ry)));
     x = degrees(rx);
-    y = degrees(2 * std::atan(std::exp(ry)) - pi / 2);
     return true;
 }
 
