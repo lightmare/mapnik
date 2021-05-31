@@ -16,5 +16,5 @@ enough it would be a shame not to be. But our development target is the latest
 release of Linux, particularly server based distributions, and many Mapnik developers
 use OSX as a development environment.
 
-If you are having fun using Mapnik, stick with it. But, Mapnik is not always the right tool, of course. If you have small sets of data (MB's), try just rendering it in a web browser client using a javascript mapping api. Or if you need to set up an array of OGC Web services, use GeoServer. Lastly, if you are looking for a full solution for web cartography, use TileMill.
+If you are having fun using Mapnik, stick with it. But, Mapnik is not always the right tool, of course. If you have small sets of data (MB'ss), try just rendering it in a web browser client using a javascript mapping api. Or if you need to set up an array of OGC Web services, use GeoServer. Lastly, if you are looking for a full solution for web cartography, use TileMill.
 
